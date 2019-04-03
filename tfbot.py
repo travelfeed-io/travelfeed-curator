@@ -195,7 +195,7 @@ def stream():
                             try:
                                 process_post()
                             except Exception as err:
-                                console.warning(
+                                logger.warning(
                                     "Could not process post: "+repr(err))
                     except ContentDoesNotExistsException:
                         continue
