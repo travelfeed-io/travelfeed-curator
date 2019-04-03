@@ -3,8 +3,11 @@ from beem.blockchain import Blockchain
 from beem.comment import Comment
 from beem.nodelist import NodeList
 from beem.exceptions import ContentDoesNotExistsException
+from beem.utils import construct_authorperm
 from langdetect import detect_langs
 import logging
+import json
+import os
 
 whitelist = ['travelfeed', 'tangofever',
              'steemitworldmap', 'de-travelfeed', 'cyclefeed']
@@ -39,12 +42,15 @@ nl = NodeList()
 weights = {'block': 1, 'history': 0, 'apicall': 1, 'config': 0}
 node_list = nl.update_nodes(weights)
 stm = Steem(nodes=node_list)
+walletpw = os.environ.get('UNLOCK')
+stm.wallet.unlock(walletpw)
 blockchain = Blockchain(steem_instance=stm)
 processed_posts = []
 
+"""Returns True if *text* contains at least *n* words in the specified *lng* language"""
+
 
 def is_eligible(text, n, lng):
-    """Returns True if *text* contains at least *n* words in the specified *lng* language"""
     for language in detect_langs(text):
         if language.lang == lng:
             probability = language.prob
@@ -56,21 +62,85 @@ def is_eligible(text, n, lng):
     return False
 
 
-def write_comment(post, commenttext, count):
+"""
+Beem actions
+"""
+
+
+"""Write a comment if no previous comment is there"""
+
+
+def write_comment(post, commenttext):
     replies = post.get_all_replies()
     for reply in replies:
-        if reply["author"] == "travelfeed":
+        if reply["author"] == curationaccount:
             if "Congratulations!" in reply["body"]:
-                console.warning(
+                logger.warning(
                     "Post already has a comment from @travelfeed!")
                 return
-    post.reply(commenttext.format(
-        author, count), author=curationaccount)
+    post.reply(commenttext, author=curationaccount, meta={'app': "travelfeed"})
     return
 
 
+"""Executes curation routine *action* for post *post*"""
+
+
+def curation_action(action, author, permlink, curator):
+    try:
+        authorperm = construct_authorperm(author, permlink)
+        post = Comment(authorperm)
+        if post["author"] in blacklist:
+            return
+        elif action == "curate":
+            try:
+                post.upvote(weight=100, voter=curationaccount)
+            except Exception as error:
+                logger.warning("Could not upvote post "+repr(error))
+            try:
+                write_comment(post, resteemtext.format(
+                    curator))
+            except Exception as error:
+                logger.warning("Could not comment on post "+repr(error))
+            try:
+                post.resteem(identifier=authorperm, account=curationaccount)
+            except Exception as error:
+                logger.warning("Could not resteem post "+repr(error))
+        elif action == "honour":
+            try:
+                post.upvote(weight=50, voter=curationaccount)
+            except Exception as error:
+                logger.warning("Could not upvote post "+repr(error))
+            try:
+                write_comment(post, honourtext.format(
+                    curator))
+            except Exception as error:
+                logger.warning("Could not comment on post "+repr(error))
+        elif action == "short":
+            try:
+                write_comment(post, manualshorttext.format(
+                    author))
+            except Exception as error:
+                logger.warning("Could not comment on post "+repr(error))
+        elif action == "language":
+            try:
+                write_comment(post, manuallangtext.format(
+                    author))
+            except Exception as error:
+                logger.warning("Could not comment on post "+repr(error))
+        elif action == "copyright":
+            try:
+                write_comment(post, copyrighttext)
+            except Exception as error:
+                logger.warning("Could not comment on post "+repr(error))
+    except Exception as error:
+        logger.warning("Could not execute action for post "+repr(error))
+    return
+
+
+"""Checks post if it fits the criteria"""
+
+
 def process_post(post):
-    """Checks for each *post* in #travelfeed if it fits the criteria"""
     commenttext = ""
     # If a post is edited within the first two minutes it would be processed twice without checking for the second condition. The array of processed posts does not need to be saved at exit since it is only relevant for two minutes
     if post.time_elapsed() > timedelta(minutes=2) or post in processed_posts:
@@ -86,11 +156,13 @@ def process_post(post):
         count = len(content.split(" "))
         check_eligible = is_eligible(content, 225, "en")
         if count < 240:
-            commenttext = shortposttext
+            commenttext = shortposttext.format(
+                author)
             logger.info("Detected short post by @{} who posted with just {} words".format(
                 author, count))
         elif check_eligible == False:
-            commenttext = wronglangtext
+            commenttext = wronglangtext.format(
+                author)
             logger.info(
                 "Detected post by @{} who posted not in English".format(author))
         if not commenttext == "":
@@ -107,8 +179,10 @@ def process_post(post):
         return
 
 
+"""Steam ops from the Steem Blockchain"""
+
+
 def stream():
-    """Steam ops from the Steem Blockchain"""
     logger.info("Started stream from Steem Blockchain")
     while True:
         for op in blockchain.stream(opNames=['comment', 'custom_json']):
@@ -129,13 +203,16 @@ def stream():
                         logger.warning(
                             'Problem with comment in stream: '+repr(error))
                         continue
-                # elif op['type'] == 'transfer':
-                #     try:
-                #         process_transfer()
-                #     except Exception as error:
-                #         logger.warning(
-                #             "Warning in transfer stream: "+repr(error))
-                #         continue
+                elif op['type'] == 'custom_json':
+                    try:
+                        if op['id'] == "travelfeed" and op['required_posting_auths'][0] in curatorlist:
+                            payload = json.loads(op['json'])
+                            curation_action(
+                                payload['action'], payload['author'], payload['permlink'], op['required_posting_auths'][0])
+                    except Exception as error:
+                        logger.warning(
+                            "Warning in custom_json stream: "+repr(error))
+                        continue
             except Exception as error:
                 logger.warning(
                     "Warning in stream: "+repr(error))
