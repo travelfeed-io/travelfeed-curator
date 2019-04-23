@@ -1,6 +1,8 @@
 appdirs==1.4.3
 asn1crypto==0.24.0
+beautifulsoup4==4.7.1
 beem==0.20.19
+bs4==0.0.1
 certifi==2019.3.9
 cffi==1.12.2
 chardet==3.0.4
@@ -11,6 +13,7 @@ Events==0.3
 future==0.17.1
 idna==2.8
 langdetect==1.0.7
+Markdown==3.1
 prettytable==0.7.2
 pycparser==2.19
 pycryptodomex==3.8.0
@@ -20,5 +23,6 @@ PyYAML==5.1
 requests==2.21.0
 scrypt==0.8.13
 six==1.12.0
-urllib3==1.24.1
+soupsieve==1.9.1
+urllib3==1.24.2
 websocket-client==0.56.0
