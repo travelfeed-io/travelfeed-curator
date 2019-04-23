@@ -1,2 +1,4 @@
 venv
 .DS_Store
+startblock.config
+tf.log

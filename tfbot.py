@@ -1,17 +1,21 @@
 from beem import Steem
 from beem.blockchain import Blockchain
 from beem.comment import Comment
+from beem.account import Account
 from beem.nodelist import NodeList
 from beem.exceptions import ContentDoesNotExistsException
 from beem.utils import construct_authorperm
 from langdetect import detect_langs
+from datetime import timedelta
+from bs4 import BeautifulSoup
+from markdown import markdown
 import logging
 import json
 import os
+import re
 
-whitelist = ['travelfeed', 'tangofever',
+whitelist = ['travelfeed',
              'steemitworldmap', 'de-travelfeed', 'cyclefeed']
-blacklist = []
 curatorlist = ['for91days', 'guchtere', 'mrprofessor',
                'jpphotography', 'elsaenroute', 'smeralda']
 curationaccount = "travelfeed"
@@ -36,16 +40,22 @@ copyrighttext = "Hi @{}, \n Thank you for participating in the #travelfeed curat
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
+logging.basicConfig(filename='tf.log',
+                    format='%(asctime)s %(levelname)s: %(message)s', level=logging.ERROR)
+# Log level should be info, but beem throws warnings every few seconds when there is a problem with a node. This cloggs the error files.
 nl = NodeList()
-weights = {'block': 1, 'history': 0, 'apicall': 1, 'config': 0}
-node_list = nl.update_nodes(weights)
-stm = Steem(nodes=node_list)
+node_list = nl.get_nodes()
+stm = Steem(nodes=node_list, timeout=10)
 walletpw = os.environ.get('UNLOCK')
 stm.wallet.unlock(walletpw)
 blockchain = Blockchain(steem_instance=stm)
-processed_posts = []
+try:
+    account = Account('travelfeed')
+    blacklist = account.get_mutings(raw_name_list=True, limit=100)
+    logger.error("Got blacklist: "+str(blacklist))
+except Exception as error:
+    logger.critical('Could not get blacklist: '+repr(error))
+    blacklist = []
 
 """Returns True if *text* contains at least *n* words in the specified *lng* language"""
 
@@ -75,10 +85,11 @@ def write_comment(post, commenttext):
     for reply in replies:
         if reply["author"] == curationaccount:
             if "Congratulations!" in reply["body"]:
-                logger.warning(
+                logger.critical(
                     "Post already has a comment from @travelfeed!")
                 return
-    post.reply(commenttext, author=curationaccount, meta={'app': "travelfeed"})
+    post.reply(commenttext, author=curationaccount,
+               meta={'app': "travelfeed/0.2.5"})
     return
 
 
@@ -95,45 +106,45 @@ def curation_action(action, author, permlink, curator):
             try:
                 post.upvote(weight=100, voter=curationaccount)
             except Exception as error:
-                logger.warning("Could not upvote post "+repr(error))
+                logger.critical("Could not upvote post "+repr(error))
             try:
                 write_comment(post, resteemtext.format(
                     curator))
             except Exception as error:
-                logger.warning("Could not comment on post "+repr(error))
+                logger.critical("Could not comment on post "+repr(error))
             try:
                 post.resteem(identifier=authorperm, account=curationaccount)
             except Exception as error:
-                logger.warning("Could not resteem post "+repr(error))
+                logger.critical("Could not resteem post "+repr(error))
         elif action == "honour":
             try:
                 post.upvote(weight=50, voter=curationaccount)
             except Exception as error:
-                logger.warning("Could not upvote post "+repr(error))
+                logger.critical("Could not upvote post "+repr(error))
             try:
                 write_comment(post, honourtext.format(
                     curator))
             except Exception as error:
-                logger.warning("Could not comment on post "+repr(error))
+                logger.critical("Could not comment on post "+repr(error))
         elif action == "short":
             try:
                 write_comment(post, manualshorttext.format(
                     author))
             except Exception as error:
-                logger.warning("Could not comment on post "+repr(error))
+                logger.critical("Could not comment on post "+repr(error))
         elif action == "language":
             try:
                 write_comment(post, manuallangtext.format(
                     author))
             except Exception as error:
-                logger.warning("Could not comment on post "+repr(error))
+                logger.critical("Could not comment on post "+repr(error))
         elif action == "copyright":
             try:
                 write_comment(post, copyrighttext)
             except Exception as error:
-                logger.warning("Could not comment on post "+repr(error))
+                logger.critical("Could not comment on post "+repr(error))
     except Exception as error:
-        logger.warning("Could not execute action for post "+repr(error))
+        logger.critical("Could not execute action for post "+repr(error))
     return
 
 
@@ -143,39 +154,38 @@ def curation_action(action, author, permlink, curator):
 def process_post(post):
     commenttext = ""
     # If a post is edited within the first two minutes it would be processed twice without checking for the second condition. The array of processed posts does not need to be saved at exit since it is only relevant for two minutes
-    if post.time_elapsed() > timedelta(minutes=2) or post in processed_posts:
-        logger.info("Ignoring updated post")
-        return
-    elif author in blacklist:
-        commenttext = blacklisttext
-        logger.info("Detected post by blacklisted user @{}".format(author))
-        return
+    replies = post.get_all_replies()
+    for reply in replies:
+        if reply["author"] == curationaccount:
+            logger.error("Ignoring updated post that already has a comment")
+            return
+    author = post['author']
+    if author in blacklist:
+        commenttext = blacklisttext.format(author)
+        logger.error("Detected post by blacklisted user @{}".format(author))
     else:
         content = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', ''.join(
-            BeautifulSoup(markdown(body), "html.parser").findAll(text=True)))
+            BeautifulSoup(markdown(post['body']), "html.parser").findAll(text=True)))
         count = len(content.split(" "))
-        check_eligible = is_eligible(content, 225, "en")
         if count < 240:
             commenttext = shortposttext.format(
-                author)
-            logger.info("Detected short post by @{} who posted with just {} words".format(
+                author, count)
+            logger.error("Detected short post by @{} who posted with just {} words".format(
                 author, count))
-        elif check_eligible == False:
+        elif is_eligible(content, 225, "en") == False:
             commenttext = wronglangtext.format(
                 author)
-            logger.info(
+            logger.error(
                 "Detected post by @{} who posted not in English".format(author))
-        if not commenttext == "":
-            try:
-                write_comment(post, commenttext.format(
-                    author, count))
-                logger.info(
-                    "I sucessfully left a comment for @{}".format(author))
-            except:
-                logger.warning(
-                    "There was an error posting the comment.")
-                return
-        processed_posts += [authorperm]
+    if not commenttext == "":
+        try:
+            write_comment(post, commenttext.format(
+                author, count))
+            logger.error(
+                "I sucessfully left a comment for @{}".format(author))
+        except:
+            logger.critical(
+                "There was an error posting the comment.")
         return
 
 
@@ -183,9 +193,16 @@ def process_post(post):
 
 
 def stream():
-    logger.info("Started stream from Steem Blockchain")
+    try:
+        blockfile = open('startblock.config', 'r')
+        starting_point = int(blockfile.read())
+        blockfile.close()
+        logger.error("Starting stream from Steem Blockchain...")
+    except:
+        logger.critical("Could not get start block")
+        return
     while True:
-        for op in blockchain.stream(opNames=['comment', 'custom_json']):
+        for op in blockchain.stream(start=starting_point, opNames=['comment', 'custom_json']):
             try:
                 if op['type'] == 'comment':
                     try:
@@ -193,14 +210,14 @@ def stream():
                         post.refresh()
                         if post.is_main_post() and "travelfeed" in post["tags"] and not post.author in whitelist:
                             try:
-                                process_post()
+                                process_post(post)
                             except Exception as err:
-                                logger.warning(
+                                logger.critical(
                                     "Could not process post: "+repr(err))
                     except ContentDoesNotExistsException:
                         continue
                     except Exception as error:
-                        logger.warning(
+                        logger.critical(
                             'Problem with comment in stream: '+repr(error))
                         continue
                 elif op['type'] == 'custom_json':
@@ -210,12 +227,12 @@ def stream():
                             curation_action(
                                 payload['action'], payload['author'], payload['permlink'], op['required_posting_auths'][0])
                     except Exception as error:
-                        logger.warning(
-                            "Warning in custom_json stream: "+repr(error))
+                        logger.critical(
+                            "Error in custom_json stream: "+repr(error))
                         continue
             except Exception as error:
-                logger.warning(
-                    "Warning in stream: "+repr(error))
+                logger.critical(
+                    "Error in stream: "+repr(error))
                 continue
 
 
