@@ -153,7 +153,9 @@ def curation_action(action, author, permlink, curator):
 
 def process_post(post):
     commenttext = ""
-    # If a post is edited within the first two minutes it would be processed twice without checking for the second condition. The array of processed posts does not need to be saved at exit since it is only relevant for two minutes
+    if post.time_elapsed() > timedelta(days=1):
+        logger.error("Ignoring old post")
+        return
     replies = post.get_all_replies()
     for reply in replies:
         if reply["author"] == curationaccount:
