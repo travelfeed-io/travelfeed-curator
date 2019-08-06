@@ -1,23 +1,25 @@
-from beem import Steem
-from beem.blockchain import Blockchain
-from beem.comment import Comment
-from beem.account import Account
-from beem.nodelist import NodeList
-from beem.exceptions import ContentDoesNotExistsException
-from beem.utils import construct_authorperm
-from langdetect import detect_langs
-from datetime import timedelta
-from bs4 import BeautifulSoup
-from markdown import markdown
-import logging
 import json
+import logging
 import os
 import re
+import time
+from datetime import timedelta
+
+from beem import Steem
+from beem.account import Account
+from beem.blockchain import Blockchain
+from beem.comment import Comment
+from beem.exceptions import ContentDoesNotExistsException
+from beem.nodelist import NodeList
+from beem.utils import construct_authorperm
+from bs4 import BeautifulSoup
+from langdetect import detect_langs
+from markdown import markdown
 
 whitelist = ['travelfeed',
-             'steemitworldmap', 'de-travelfeed', 'cyclefeed']
+             'steemitworldmap', 'de-travelfeed', 'cyclefeed', 'tangofever']
 curatorlist = ['for91days', 'guchtere', 'mrprofessor',
-               'jpphotography', 'elsaenroute', 'smeralda']
+               'jpphotography', 'elsaenroute', 'smeralda', 'travelfeed', 'worldcapture']
 curationaccount = "travelfeed"
 # Comment for short posts
 shortposttext = "Hi @{}, \n Thank you for participating in the #travelfeed curated tag. To maintain a level of quality on the project we have certain criteria that must be met for participation. Please review the following: https://travelfeed.io/@travelfeed/how-to-participate-use-travelfeed-in-your-posts \n **We require at least 250 words, but your post has only {} words.** \n Thank you very much for your interest and we hope to read some great travel articles from you soon! \n If you believe that you have received this comment by mistake or have updated your post to fit our criteria, you can ignore this comment. For further questions, please contact us on the [TravelFeed Discord](https://discord.gg/jWWu73H). \n Regards, @travelfeed"
@@ -44,6 +46,7 @@ logging.basicConfig(filename='tf.log',
                     format='%(asctime)s %(levelname)s: %(message)s', level=logging.ERROR)
 # Log level should be info, but beem throws warnings every few seconds when there is a problem with a node. This cloggs the error files.
 nl = NodeList()
+nl.update_nodes()
 node_list = nl.get_nodes()
 stm = Steem(nodes=node_list, timeout=10)
 walletpw = os.environ.get('UNLOCK')
@@ -81,15 +84,23 @@ Beem actions
 
 
 def write_comment(post, commenttext):
-    replies = post.get_all_replies()
-    for reply in replies:
-        if reply["author"] == curationaccount:
-            if "Congratulations!" in reply["body"]:
-                logger.critical(
-                    "Post already has a comment from @travelfeed!")
-                return
+    time.sleep(3)
+    try:
+        replies = post.get_all_replies()
+        for reply in replies:
+            try:
+                if reply["author"] == curationaccount:
+                    if "Congratulations!" in reply["body"]:
+                        logger.critical(
+                            "Post already has a comment from @travelfeed!")
+                        return
+            except:
+                continue
+    except:
+        logger.warning("Problem with analyzing comments of post")
     post.reply(commenttext, author=curationaccount,
-               meta={'app': "travelfeed/0.2.5"})
+               meta={'app': "travelfeed/1.1.0"})
+    time.sleep(3)
     return
 
 
@@ -140,7 +151,8 @@ def curation_action(action, author, permlink, curator):
                 logger.critical("Could not comment on post "+repr(error))
         elif action == "copyright":
             try:
-                write_comment(post, copyrighttext)
+                write_comment(post, copyrighttext.format(
+                    author))
             except Exception as error:
                 logger.critical("Could not comment on post "+repr(error))
     except Exception as error:
