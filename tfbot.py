@@ -28,11 +28,11 @@ blacklisttext = "Hi @{}, \n Thank you for participating in the #travelfeed curat
 # Comment for other languages
 wronglangtext = "Hi @{}, \n Thank you for participating in the #travelfeed curated tag. To maintain a level of quality on the project we have certain criteria that must be met for participation. Please review the following: https://travelfeed.io/@travelfeed/how-to-participate-use-travelfeed-in-your-posts \n We require at least 250 words **in English**. \n Thank you very much for your interest and we hope to read some great travel articles from you soon! \n The language of your post was automatically detected, if your English text is at least 250 words long or you have updated your post to fit our criteria, you can ignore this comment for it to be considered for curation. For further questions, please contact us on the [TravelFeed Discord](https://discord.gg/jWWu73H). \n Regards, @travelfeed"
 # Honour text
-honourtext = "Congratulations! Your high-quality travel content was selected by @travelfeed curator @{} and earned you a **partial** upvote. We love your hard work and hope to encourage you to continue to publish strong travel-related content. <br> Thank you for being part of the TravelFeed community! <center> [![TravelFeed](https://ipfs.busy.org/ipfs/QmZhLuw8WE6JMCYHD3EXn3MBa2CSCcygvfFqfXde5z3TLZ)](https://travelfeed.io/@travelfeed/introducing-travelfeed-featuring-steemit-s-best-travel-content) <br> **Learn more about our travel project by clicking on the banner above and join our community on [Discord](https://discord.gg/jWWu73H)**.</center>"
+honourtext = "Congratulations! Your high-quality travel content was selected by @travelfeed curator @{} and earned you a **partial** upvote. We love your hard work and hope to encourage you to continue to publish strong travel-related content. <br> Thank you for being part of the TravelFeed community!"
 # Resteem Text
-resteemtext = "Congratulations! Your high-quality travel content was selected by @travelfeed curator @{} and earned you a reward, in form of a **100% upvote** and a **resteem**. Your work really stands out! Your article now has a chance to get featured under the appropriate daily topic on our TravelFeed blog. <br> Thank you for being part of the TravelFeed community! <br> <center>[![TravelFeed](https://ipfs.busy.org/ipfs/QmNTkoKQNzuQbQGbcZ1exTMjvxYUprdnVczxnvib9VUSqB)](http://travelfeed.io/travelfeed/@travelfeed/introducing-travelfeed-featuring-steemit-s-best-travel-content) <br> **Learn more about our travel project by clicking on the banner above and join our community on [Discord](https://discord.gg/jWWu73H)**</center>"
+resteemtext = "Congratulations! Your high-quality travel content was selected by @travelfeed curator @{} and earned you a reward, in form of an **upvote** and a **resteem**. Your work really stands out! Your article now has a chance to get featured under the appropriate daily topic on our TravelFeed blog. <br> Thank you for being part of the TravelFeed community!"
 # Advote Text
-advotetext = "Great read! Your high-quality travel content was selected by @travelfeed curator @{}. We just gave you a small upvote together with over 60 followers of the @travelfeed curation trail. <br> Have you heard of @travelfeed? Using the #travelfeed tag rewards authors and content creators who produce exceptional travel related articles, so be sure use our tag to get much bigger upvotes, resteems and be featured in our curation posts! <br> <center>[![TravelFeed](https://ipfs.busy.org/ipfs/QmNTkoKQNzuQbQGbcZ1exTMjvxYUprdnVczxnvib9VUSqB)](http://travelfeed.io/travelfeed/@travelfeed/introducing-travelfeed-featuring-steemit-s-best-travel-content) <br> **Learn more about our travel project by clicking on the banner above and join our community on [Discord](https://discord.gg/jWWu73H)**</center>"
+advotetext = "Great read! Your high-quality travel content was selected by @travelfeed curator @{}. We just gave you a small upvote together with over 60 followers of the @travelfeed curation trail. <br> Have you heard of @travelfeed? Using the #travelfeed tag rewards authors and content creators who produce exceptional travel related articles, so be sure use our tag to get much bigger upvotes, resteems and be featured in our curation posts!"
 # Manual comment text for short posts
 manualshorttext = "Hi @{}, \n Thank you for participating in the #travelfeed curated tag. To maintain a level of quality on the project we have certain criteria that must be met for participation. Please review the following: https://travelfeed.io/@travelfeed/how-to-participate-use-travelfeed-in-your-posts \n **We require at least 250 words.** \n Thank you very much for your interest and we hope to read some great travel articles from you soon! \n If you believe that you have received this comment by mistake or have updated your post to fit our criteria, you can ignore this comment. For further questions, please contact us on the [TravelFeed Discord](https://discord.gg/jWWu73H). \n Regards, @travelfeed"
 # Manual comment text for posts that are not in English
@@ -83,7 +83,7 @@ Beem actions
 """Write a comment if no previous comment is there"""
 
 
-def write_comment(post, commenttext):
+def write_comment(post, commenttext, isTfio=False):
     time.sleep(3)
     try:
         replies = post.get_all_replies()
@@ -98,8 +98,13 @@ def write_comment(post, commenttext):
                 continue
     except:
         logger.warning("Problem with analyzing comments of post")
+    if (isTfio):
+        commenttext += "\n\nThanks for posting through <a href='https://travelfeed.io/'>TravelFeed.io</a>! You have received a larger upvote from us. We hope to see you soon on <a href='https://travelfeed.io/'>TravelFeed.io</a>! \nPosting through <a href='https://travelfeed.io/'>TravelFeed.io</a> also makes your post eligible to participate in the travel writing contest by <a href='https://travelfeed.io/@invisusmundi'>@invisusmundi</a> where you can earn up to 100 STEEM!"
+    else:
+        commenttext += "\n\nDid you know that you get larger upvotes when posting through <a href='https://travelfeed.io/'>TravelFeed.io</a>? That is not all, thanks to the travel writing contest by <a href='https://travelfeed.io/@invisusmundi'>@invisusmundi</a> you can now earn up to 100 STEEM on top of the post rewards when posting through our new platform <a href='https://travelfeed.io/'>TravelFeed.io</a>!"
+    commenttext += " <a href='https://steempeak.com/contest/@invisusmundi/travelfeed-travel-writing-contest'>Read the contest announcement</a> for more information on how to participate. \n\n We are continuously working on improving TravelFeed, recently we <a href='https://travelfeed.io/@travelfeed/travelfeed-weekly-round-up-77-win-100-steem-and-important-updates-v1-3'>relaunched our map and reinvented the profile introducing collectible badges and a scratch-off-map of your visited countries and posts</a>.\n\n<center> [![](https://ipfs.busy.org/ipfs/QmZhLuw8WE6JMCYHD3EXn3MBa2CSCcygvfFqfXde5z3TLZ)](https://travelfeed.io/@travelfeed/introducing-travelfeed-beta)\n **Learn more about TravelFeed by clicking on the banner above and join our community on [Discord](https://discord.gg/jWWu73H)**.</center>"
     post.reply(commenttext, author=curationaccount,
-               meta={'app': "travelfeed/1.1.0"})
+               meta={'app': "travelfeed/1.3.0"})
     time.sleep(3)
     return
 
@@ -111,16 +116,21 @@ def curation_action(action, author, permlink, curator):
     try:
         authorperm = construct_authorperm(author, permlink)
         post = Comment(authorperm)
+        app = post.json_metadata.get('app', None).split('/')[0]
+        isTfio = app == "travelfeed"
         if post["author"] in blacklist:
             return
         elif action == "curate":
             try:
-                post.upvote(weight=100, voter=curationaccount)
+                if(isTfio):
+                    post.upvote(weight=100, voter=curationaccount)
+                else:
+                    post.upvote(weight=90, voter=curationaccount)
             except Exception as error:
                 logger.critical("Could not upvote post "+repr(error))
             try:
                 write_comment(post, resteemtext.format(
-                    curator))
+                    curator), isTfio)
             except Exception as error:
                 logger.critical("Could not comment on post "+repr(error))
             try:
@@ -129,12 +139,15 @@ def curation_action(action, author, permlink, curator):
                 logger.critical("Could not resteem post "+repr(error))
         elif action == "honour":
             try:
-                post.upvote(weight=50, voter=curationaccount)
+                if(isTfio):
+                    post.upvote(weight=65, voter=curationaccount)
+                else:
+                    post.upvote(weight=50, voter=curationaccount)
             except Exception as error:
                 logger.critical("Could not upvote post "+repr(error))
             try:
                 write_comment(post, honourtext.format(
-                    curator))
+                    curator), isTfio)
             except Exception as error:
                 logger.critical("Could not comment on post "+repr(error))
         elif action == "short":
