@@ -5,6 +5,10 @@ import re
 import time
 from datetime import timedelta
 
+from bs4 import BeautifulSoup
+from langdetect import detect_langs
+from markdown import markdown
+
 from beem import Steem
 from beem.account import Account
 from beem.blockchain import Blockchain
@@ -12,9 +16,6 @@ from beem.comment import Comment
 from beem.exceptions import ContentDoesNotExistsException
 from beem.nodelist import NodeList
 from beem.utils import construct_authorperm
-from bs4 import BeautifulSoup
-from langdetect import detect_langs
-from markdown import markdown
 
 whitelist = ['travelfeed',
              'steemitworldmap', 'de-travelfeed', 'cyclefeed', 'tangofever']
@@ -99,10 +100,10 @@ def write_comment(post, commenttext, isTfio=False):
     except:
         logger.warning("Problem with analyzing comments of post")
     if (isTfio):
-        commenttext += "\n\nThanks for posting through <a href='https://travelfeed.io/'>TravelFeed.io</a>! You have received a larger upvote from us. We hope to see you soon on <a href='https://travelfeed.io/'>TravelFeed.io</a>! \nPosting through <a href='https://travelfeed.io/'>TravelFeed.io</a> also makes your post eligible to participate in the travel writing contest by <a href='https://travelfeed.io/@invisusmundi'>@invisusmundi</a> where you can earn up to 100 STEEM!"
+        commenttext += "\n\nThanks for posting through <a href='https://travelfeed.io/'>TravelFeed.io</a>! You have received a larger upvote from us. We hope to see you soon on <a href='https://travelfeed.io/'>TravelFeed.io</a>! \nPosting through <a href='https://travelfeed.io/'>TravelFeed.io</a> also makes your post eligible to participate our <a href='https://travelfeed.io/@travelfeed/blocktrades-anomadsoul-travelfeed-steemfest-ticket-giveaway'>Steemfest ticket giveaway</a>. Please check the post for instructions on how to participate. If you already opted in before September 12th, please double-check that you are opted in since we had some problems with opt-ins not being recorded in the beginning! \nAlso, you can participate in the travel writing contest by <a href='https://travelfeed.io/@invisusmundi'>@invisusmundi</a> where you can earn up to 100 STEEM!"
     else:
-        commenttext += "\n\nDid you know that you get larger upvotes when posting through <a href='https://travelfeed.io/'>TravelFeed.io</a>? That is not all, thanks to the travel writing contest by <a href='https://travelfeed.io/@invisusmundi'>@invisusmundi</a> you can now earn up to 100 STEEM on top of the post rewards when posting through our new platform <a href='https://travelfeed.io/'>TravelFeed.io</a>!"
-    commenttext += " <a href='https://steempeak.com/contest/@invisusmundi/travelfeed-travel-writing-contest'>Read the contest announcement</a> for more information on how to participate. \n\n We are continuously working on improving TravelFeed, recently we <a href='https://travelfeed.io/@travelfeed/travelfeed-weekly-round-up-77-win-100-steem-and-important-updates-v1-3'>relaunched our map and reinvented the profile introducing collectible badges and a scratch-off-map of your visited countries and posts</a>.\n\n<center> [![](https://ipfs.busy.org/ipfs/QmZhLuw8WE6JMCYHD3EXn3MBa2CSCcygvfFqfXde5z3TLZ)](https://travelfeed.io/@travelfeed/introducing-travelfeed-beta)\n **Learn more about TravelFeed by clicking on the banner above and join our community on [Discord](https://discord.gg/jWWu73H)**.</center>"
+        commenttext += "\n\nDid you know that you get larger upvotes when posting through <a href='https://travelfeed.io/'>TravelFeed.io</a>? That is not all, we are also <a href='https://travelfeed.io/@travelfeed/blocktrades-anomadsoul-travelfeed-steemfest-ticket-giveaway'>giving away a ticket to Steemfest</a> to one lucky TravelFeed user. Make sure to read the announcement and opt in! Also, thanks to the travel writing contest by <a href='https://travelfeed.io/@invisusmundi'>@invisusmundi</a> you can now earn up to 100 STEEM on top of the post rewards when posting through our new platform <a href='https://travelfeed.io/'>TravelFeed.io</a>!"
+    commenttext += " <a href='https://steempeak.com/contest/@invisusmundi/travelfeed-io-travel-writing-contest-no3'>Read the contest announcement</a> for more information on how to participate. \n\n We are continuously working on improving TravelFeed, recently we <a href='https://travelfeed.io/@travelfeed/easysignup-easylogin'>introduced EasySignUp and EasyLogin, our first step to make TravelFeed ready for mass adoption</a>.\n\n<center> [![](https://ipfs.busy.org/ipfs/QmZhLuw8WE6JMCYHD3EXn3MBa2CSCcygvfFqfXde5z3TLZ)](https://travelfeed.io/@travelfeed/introducing-travelfeed-beta)\n **Learn more about TravelFeed by clicking on the banner above and join our community on [Discord](https://discord.gg/jWWu73H)**.</center>"
     post.reply(commenttext, author=curationaccount,
                meta={'app': "travelfeed/1.3.0"})
     time.sleep(3)
