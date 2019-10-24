@@ -40,6 +40,8 @@ manualshorttext = "Hi @{}, \n Thank you for participating in the #travelfeed cur
 manuallangtext = "Hi @{}, \n Thank you for participating in the #travelfeed curated tag. To maintain a level of quality on the project we have certain criteria that must be met for participation. Please review the following: https://travelfeed.io/@travelfeed/updated-how-to-participate-on-travelfeed-io \n We require at least 250 words **in English**. \n Thank you very much for your interest and we hope to read some great travel articles from you soon! \n If you believe that you have received this comment by mistake or have updated your post to fit our criteria, you can ignore this comment. For further questions, please contact us on the [TravelFeed Discord](https://discord.gg/jWWu73H). \n Regards, @travelfeed"
 # Copyright text
 copyrighttext = "Hi @{}, \n Thank you for participating in the #travelfeed curated tag. To maintain a level of quality on the project we have certain criteria that must be met for participation. Please review the following: https://travelfeed.io/@travelfeed/updated-how-to-participate-on-travelfeed-io \n We require **proper sourcing** for all media and text that is not your own. \n If you have updated your post with sources, you can ignore this comment. For further questions, please contact us on the [TravelFeed Discord](https://discord.gg/jWWu73H). \n Thank you very much for your interest and we hope to read some great travel articles from you soon! \n Regards, @travelfeed"
+# Text if travelfeed  is used in tags, but not within the first 5 tags
+notinfirsttagstext = "Hi @{}, \n Thank you for tagging your post with #travelfeed. However, you added more than 5 tags to your post, which is generally not recommended. Since 'travelfeed' is not within your first 5 tags, your post will not be indexed correctly by Hivemind, the code that powers most Steem applications, including TravelFeed. This means, that nobody can see your post on TravelFeed, including the TravelFeed curation team. Please edit your post and place 'travelfeed' within the first 5 tags if you would like your post to be visible on TravelFeed and considered for curation. \n Regards, @travelfeed"
 
 
 logger = logging.getLogger(__name__)
@@ -205,6 +207,11 @@ def process_post(post):
                 author)
             logger.error(
                 "Detected post by @{} who posted not in English".format(author))
+        elif post['tags'].index('travelfeed') > 4:
+            commenttext = notinfirsttagstext.format(
+                author)
+            logger.error(
+                "Detected post by @{} who used the tag travelfeed, but not within the first 5 tags".format(author))
     if not commenttext == "":
         try:
             write_comment(post, commenttext.format(
