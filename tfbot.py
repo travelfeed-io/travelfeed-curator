@@ -41,7 +41,7 @@ manuallangtext = "Hi @{}, \n Thank you for participating in the #travelfeed cura
 # Copyright text
 copyrighttext = "Hi @{}, \n Thank you for participating in the #travelfeed curated tag. To maintain a level of quality on the project we have certain criteria that must be met for participation. Please review the following: https://travelfeed.io/@travelfeed/updated-how-to-participate-on-travelfeed-io \n We require **proper sourcing** for all media and text that is not your own. \n If you have updated your post with sources, you can ignore this comment. For further questions, please contact us on the [TravelFeed Discord](https://discord.gg/jWWu73H). \n Thank you very much for your interest and we hope to read some great travel articles from you soon! \n Regards, @travelfeed"
 # Text if travelfeed  is used in tags, but not within the first 5 tags
-notinfirsttagstext = "Hi @{}, \n Thank you for tagging your post with #travelfeed. However, you added more than 5 tags to your post, which is generally not recommended. Since 'travelfeed' is not within your first 5 tags, your post will not be indexed correctly by Hivemind, the code that powers most Steem applications, including TravelFeed. This means, that nobody can see your post on TravelFeed, including the TravelFeed curation team. Please edit your post and place 'travelfeed' within the first 5 tags if you would like your post to be visible on TravelFeed and considered for curation. \n Regards, @travelfeed"
+notinfirsttagstext = "Hi @{}, \n Thank you for tagging your post with #travelfeed. However, you added more than 5 tags to your post, which is not recommended (except for tribe tags) since only the first 5 tags are indexed by Hivemind, the code that powers most Steem applications, including TravelFeed. This means, that nobody can see your post on TravelFeed, including the TravelFeed curation team. Please edit your post and place #travelfeed within the first 5 tags if you would like your post to be visible on TravelFeed and considered for curation. \n Regards, @travelfeed"
 
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ def write_comment(post, commenttext, isTfio=False):
         commenttext += "\n\nThanks for posting through <a href='https://travelfeed.io/'>TravelFeed.io</a>! You have received a larger upvote from us. We hope to see you soon on <a href='https://travelfeed.io/'>TravelFeed.io</a>! \n"
     else:
         commenttext += "\n\nDid you know that you get larger upvotes when posting through <a href='https://travelfeed.io/'>TravelFeed.io</a>?"
-    commenttext += " \n\n We are continuously working on improving TravelFeed, recently we <a href='https://travelfeed.io/@travelfeed/updates-new-content-tiles-comment-editor-and-the-steemfest-ticket-winner'>introduced new content tiles that make discovering awesome destinations and topics even easier</a>.\n\n<center> [![](https://ipfs.busy.org/ipfs/QmZhLuw8WE6JMCYHD3EXn3MBa2CSCcygvfFqfXde5z3TLZ)](https://travelfeed.io/@travelfeed/introducing-travelfeed-beta)\n **Learn more about TravelFeed by clicking on the banner above and join our community on [Discord](https://discord.gg/jWWu73H)**.</center>"
+    commenttext += " \n\n We are continuously working on improving TravelFeed, recently we <a href='https://travelfeed.io/@travelfeed/updates-easylogin-for-all-post-scheduling-auto-rewards-claim'>introduced post scheduling, automated rewards claiming and EasyLogIn for all</a>.\n\n<center> [![](https://ipfs.busy.org/ipfs/QmZhLuw8WE6JMCYHD3EXn3MBa2CSCcygvfFqfXde5z3TLZ)](https://travelfeed.io/@travelfeed/introducing-travelfeed-beta)\n **Learn more about TravelFeed by clicking on the banner above and join our community on [Discord](https://discord.gg/jWWu73H)**.</center>"
     post.reply(commenttext, author=curationaccount,
                meta={'app': "travelfeed"})
     time.sleep(3)
@@ -202,11 +202,11 @@ def process_post(post):
                 author, count)
             logger.error("Detected short post by @{} who posted with just {} words".format(
                 author, count))
-        elif is_eligible(content, 225, "en") == False:
-            commenttext = wronglangtext.format(
-                author)
-            logger.error(
-                "Detected post by @{} who posted not in English".format(author))
+        # elif is_eligible(content, 225, "en") == False:
+        #     commenttext = wronglangtext.format(
+        #         author)
+        #     logger.error(
+        #         "Detected post by @{} who posted not in English".format(author))
         elif post['tags'].index('travelfeed') > 4:
             commenttext = notinfirsttagstext.format(
                 author)
