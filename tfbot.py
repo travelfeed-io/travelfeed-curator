@@ -197,7 +197,7 @@ def process_post(post):
         content = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', ''.join(
             BeautifulSoup(markdown(post['body']), "html.parser").findAll(text=True)))
         count = len(content.split(" "))
-        if count < 240:
+        if "introduceyourself" not in post["tags"] and count < 240:
             commenttext = shortposttext.format(
                 author, count)
             logger.error("Detected short post by @{} who posted with just {} words".format(
